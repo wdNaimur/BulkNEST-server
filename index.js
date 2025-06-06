@@ -21,9 +21,17 @@ async function run() {
   try {
     const database = client.db("bulkNEST");
     const productCollection = database.collection("products");
+
+    // get all product
     app.get("/products", async (req, res) => {
       const allProducts = await productCollection.find().toArray();
       res.send(allProducts);
+    });
+    //post a new product
+    app.post("/products", async (req, res) => {
+      const newProduct = req.body;
+      const result = await productCollection.insertOne(newProduct);
+      res.status(201).send(result);
     });
     // LAST ON TRY BLOCK Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
