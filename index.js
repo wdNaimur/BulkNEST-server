@@ -30,9 +30,16 @@ async function run() {
     });
     // get single product
     app.get("/product/:id", async (req, res) => {
-      const id = req.params;
+      const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const product = await productCollection.findOne(query);
+      res.send(product);
+    });
+    // get product by email
+    app.get("/myProducts/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const product = await productCollection.find(query).toArray();
       res.send(product);
     });
     //post a new product
