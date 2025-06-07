@@ -21,6 +21,7 @@ async function run() {
   try {
     const database = client.db("bulkNEST");
     const productCollection = database.collection("products");
+    const orderCollection = database.collection("orders");
 
     // get all product
     app.get("/products", async (req, res) => {
@@ -39,6 +40,34 @@ async function run() {
       const newProduct = req.body;
       const result = await productCollection.insertOne(newProduct);
       res.status(201).send(result);
+    });
+    // Order functionality
+    app.post("/orders", async (req, res) => {
+      const orderData = req.body;
+      const { quantity, buyerDetails } = orderData;
+      const id = orderData.productId;
+      const query = { _id: new ObjectId(id) };
+      console.log(id, quantity, buyerDetails);
+
+      try {
+        // find product
+        const product = await productCollection.findOne(query);
+        console.log("product", product);
+        // create order
+        orderData.date = new Date();
+        const orderResult = await orderCollection.insertOne(orderData);
+        // Update productQuantity
+        await productCollection.updateOne(query, {
+          $inc: { main_quantity: -quantity },
+        });
+        res.send({
+          success: true,
+          message: "Order placed successfully",
+          orderId: orderResult.insertedId,
+        });
+      } catch (err) {
+        console.log(err);
+      }
     });
     // LAST ON TRY BLOCK Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
