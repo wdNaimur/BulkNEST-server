@@ -48,6 +48,41 @@ async function run() {
       const result = await productCollection.insertOne(newProduct);
       res.status(201).send(result);
     });
+    // get order data by email my cart
+    app.get("/orders/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { orderedFrom: email };
+
+      try {
+        const orders = await orderCollection.find(query).toArray();
+
+        if (!orders.length) {
+          return res
+            .status(404)
+            .send({ message: "No orders found for this email." });
+        }
+
+        const fullOrderDetails = await Promise.all(
+          orders.map(async (order) => {
+            const productQuery = { _id: new ObjectId(order.productId) };
+            const productDetails = await productCollection.findOne(
+              productQuery
+            );
+            order.productImage = productDetails.image;
+            order.productBrand = productDetails.brand;
+            order.productName = productDetails.name;
+            order.totalPrice = order.quantity * productDetails.price;
+
+            return order;
+          })
+        );
+
+        res.send(fullOrderDetails);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Error retrieving orders" });
+      }
+    });
     // Order functionality
     app.post("/orders", async (req, res) => {
       const orderData = req.body;
@@ -59,23 +94,27 @@ async function run() {
       try {
         // find product
         const product = await productCollection.findOne(query);
-        console.log("product", product);
+        // console.log("product", product);
         // create order
         orderData.date = new Date();
         const orderResult = await orderCollection.insertOne(orderData);
+        console.log("Order Result: ", orderResult);
         // Update productQuantity
-        await productCollection.updateOne(query, {
-          $inc: { main_quantity: -quantity },
-        });
-        res.send({
-          success: true,
-          message: "Order placed successfully",
-          orderId: orderResult.insertedId,
-        });
+        if (orderResult.acknowledged) {
+          await productCollection.updateOne(query, {
+            $inc: { main_quantity: -quantity },
+          });
+          res.send({
+            success: true,
+            message: "Order placed successfully",
+            orderId: orderResult.insertedId,
+          });
+        }
       } catch (err) {
         console.log(err);
       }
     });
+
     // LAST ON TRY BLOCK Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
