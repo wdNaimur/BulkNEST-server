@@ -48,6 +48,17 @@ async function run() {
       const result = await productCollection.insertOne(newProduct);
       res.status(201).send(result);
     });
+    // Update Product
+    app.patch("/product/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updatedData = req.body;
+      const updatedDoc = {
+        $set: updatedData,
+      };
+      const result = await productCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
     // get order data by email my cart
     app.get("/orders/:email", async (req, res) => {
       const email = req.params.email;
@@ -114,7 +125,14 @@ async function run() {
         console.log(err);
       }
     });
-
+    // delete Order
+    app.delete("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await orderCollection.deleteOne(query);
+      console.log(result);
+      res.send(result);
+    });
     // LAST ON TRY BLOCK Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
