@@ -28,6 +28,14 @@ async function run() {
       const allProducts = await productCollection.find().toArray();
       res.send(allProducts);
     });
+    // get  products by categories
+    app.get("/products/:category", async (req, res) => {
+      const category = req.params.category;
+      const query = { category: category };
+      const product = await productCollection.find(query).toArray();
+      console.log(product);
+      res.send(product);
+    });
     // get single product
     app.get("/product/:id", async (req, res) => {
       const id = req.params.id;
@@ -128,9 +136,18 @@ async function run() {
     // delete Order
     app.delete("/orders/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await orderCollection.deleteOne(query);
-      console.log(result);
+      const orderQuery = { _id: new ObjectId(id) };
+      const orderDetails = await orderCollection.findOne(orderQuery);
+      const productId = await orderDetails.productId;
+      const productQuery = { _id: new ObjectId(productId) };
+      const quantity = orderDetails.quantity;
+      const result = await orderCollection.deleteOne(orderQuery);
+      if (result.deletedCount) {
+        console.log("deleted");
+        await productCollection.updateOne(productQuery, {
+          $inc: { main_quantity: quantity },
+        });
+      }
       res.send(result);
     });
     // LAST ON TRY BLOCK Send a ping to confirm a successful connection
