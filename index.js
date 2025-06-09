@@ -25,14 +25,20 @@ async function run() {
 
     // get all product
     app.get("/products", async (req, res) => {
-      const allProducts = await productCollection.find().toArray();
+      const allProducts = await productCollection
+        .find()
+        .sort({ _id: -1 })
+        .toArray();
       res.send(allProducts);
     });
     // get  products by categories
     app.get("/products/:category", async (req, res) => {
       const category = req.params.category;
       const query = { category: category };
-      const product = await productCollection.find(query).toArray();
+      const product = await productCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
       console.log(product);
       res.send(product);
     });
@@ -47,7 +53,10 @@ async function run() {
     app.get("/myProducts/:email", async (req, res) => {
       const email = req.params.email;
       const query = { userEmail: email };
-      const product = await productCollection.find(query).toArray();
+      const product = await productCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
       res.send(product);
     });
     //post a new product
@@ -73,7 +82,10 @@ async function run() {
       const query = { orderedFrom: email };
 
       try {
-        const orders = await orderCollection.find(query).toArray();
+        const orders = await orderCollection
+          .find(query)
+          .sort({ _id: -1 })
+          .toArray();
 
         if (!orders.length) {
           return res
