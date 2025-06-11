@@ -28,6 +28,7 @@ app.use(cookieParser());
 
 // Jwt Middleware
 const verifyJWT = async (req, res, next) => {
+  //firebase Verify token firebase admin sdk
   const token = req?.headers?.authorization?.split(" ")[1];
   if (!token) {
     return res.status(401).send({ message: "unauthorized access" });
@@ -40,7 +41,6 @@ const verifyJWT = async (req, res, next) => {
     console.log(err);
     return res.status(401).send({ message: "unauthorized access" });
   }
-  //firebase Verify token firebase admin sdk
 };
 
 const client = new MongoClient(process.env.MONGODB_URI, {
@@ -57,7 +57,7 @@ async function run() {
     const productCollection = database.collection("products");
     const orderCollection = database.collection("orders");
 
-    // get all product
+    // end get all product
     app.get("/products/:email", verifyJWT, async (req, res) => {
       const decodedEmail = req.tokenEmail;
       const email = req.params.email;
@@ -71,13 +71,12 @@ async function run() {
         res.send(allProducts);
       }
     });
-    // get  products by categories
+    // end get  products by categories
     app.get("/categories/:category", verifyJWT, async (req, res) => {
-      const decodedEmail = req.tokenEmail; // ✅ From your middleware
-      const requestEmail = req.query.email; // ✅ From query param
+      const decodedEmail = req.tokenEmail;
+      const requestEmail = req.query.email;
       const category = req.params.category;
 
-      // Optional: check if decoded email and query email match
       if (decodedEmail !== requestEmail) {
         return res.status(403).send({ message: "Forbidden: Email mismatch" });
       }
@@ -90,7 +89,6 @@ async function run() {
 
       res.send(product);
     });
-
     // get single product
     app.get("/product/:id", async (req, res) => {
       const id = req.params.id;
@@ -98,10 +96,14 @@ async function run() {
       const product = await productCollection.findOne(query);
       res.send(product);
     });
-    // get product by email
-    app.get("/myProducts/:email", async (req, res) => {
-      const email = req.params.email;
-      const query = { userEmail: email };
+    // end get product by email
+    app.get("/myProducts/:email", verifyJWT, async (req, res) => {
+      const requestEmail = req.params.email;
+      const decodedEmail = req.tokenEmail;
+      if (decodedEmail !== requestEmail) {
+        return res.status(403).send({ message: "Forbidden: Email mismatch" });
+      }
+      const query = { userEmail: requestEmail };
       const product = await productCollection
         .find(query)
         .sort({ _id: -1 })
@@ -109,10 +111,24 @@ async function run() {
       res.send(product);
     });
     //post a new product
-    app.post("/products", async (req, res) => {
+    app.post("/products/:email", verifyJWT, async (req, res) => {
+      const emailFromToken = req.tokenEmail; // from decoded JWT
+      const emailFromParam = req.params.email; // from route param
+
+      // Security check: Ensure the email in the token matches the route param
+      if (emailFromToken !== emailFromParam) {
+        return res.status(403).send({ message: "Unauthorized" });
+      }
+
       const newProduct = req.body;
-      const result = await productCollection.insertOne(newProduct);
-      res.status(201).send(result);
+
+      try {
+        const result = await productCollection.insertOne(newProduct);
+        res.status(201).send(result);
+      } catch (error) {
+        console.error("Error inserting product:", error);
+        res.status(500).send({ message: "Server Error" });
+      }
     });
     // Update Product
     app.patch("/product/:id", async (req, res) => {
@@ -125,7 +141,7 @@ async function run() {
       const result = await productCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
-    // get order data by email my cart
+    // end get order data by email my cart
     app.get("/orders/:email", verifyJWT, async (req, res) => {
       const decodedEmail = req.tokenEmail;
       const email = req.params.email;
