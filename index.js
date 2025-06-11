@@ -117,10 +117,9 @@ async function run() {
     });
     // end post a new product
     app.post("/products/:email", verifyJWT, async (req, res) => {
-      const emailFromToken = req.tokenEmail; // from decoded JWT
-      const emailFromParam = req.params.email; // from route param
+      const emailFromToken = req.tokenEmail;
+      const emailFromParam = req.params.email;
 
-      // Security check: Ensure the email in the token matches the route param
       if (emailFromToken !== emailFromParam) {
         return res.status(403).send({ message: "Unauthorized" });
       }
@@ -135,8 +134,13 @@ async function run() {
         res.status(500).send({ message: "Server Error" });
       }
     });
-    // Update Product
-    app.patch("/product/:id", async (req, res) => {
+    // end Update Product
+    app.patch("/product/:id", verifyJWT, async (req, res) => {
+      const requestEmail = req.query.email;
+      const emailFromToken = req.tokenEmail;
+      if (emailFromToken !== requestEmail) {
+        return res.status(403).send({ message: "Unauthorized" });
+      }
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updatedData = req.body;
