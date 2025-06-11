@@ -89,8 +89,13 @@ async function run() {
 
       res.send(product);
     });
-    // get single product
-    app.get("/product/:id", async (req, res) => {
+    // end get single product
+    app.get("/product/:id", verifyJWT, async (req, res) => {
+      const decodedEmail = req.tokenEmail;
+      const requestEmail = req.query.email;
+      if (requestEmail !== decodedEmail) {
+        return res.status(403).send({ message: "unauthorized access" });
+      }
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const product = await productCollection.findOne(query);
@@ -110,7 +115,7 @@ async function run() {
         .toArray();
       res.send(product);
     });
-    //post a new product
+    // end post a new product
     app.post("/products/:email", verifyJWT, async (req, res) => {
       const emailFromToken = req.tokenEmail; // from decoded JWT
       const emailFromParam = req.params.email; // from route param
@@ -184,8 +189,13 @@ async function run() {
         }
       }
     });
-    // Order functionality
-    app.post("/orders", async (req, res) => {
+    // end Order functionality
+    app.post("/orders/:email", verifyJWT, async (req, res) => {
+      const decodedEmail = req.tokenEmail;
+      const email = req.params.email;
+      if (email !== decodedEmail) {
+        return res.status(403).send({ message: "unauthorized access" });
+      }
       const orderData = req.body;
       const { quantity, buyerDetails } = orderData;
       const id = orderData.productId;
