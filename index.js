@@ -60,16 +60,23 @@ async function run() {
     // end get all product
     app.get("/products/:email", verifyJWT, async (req, res) => {
       const decodedEmail = req.tokenEmail;
+      const available = req.query.available === "true";
+
       const email = req.params.email;
       if (email !== decodedEmail) {
         return res.status(403).send({ message: "unauthorized access" });
-      } else {
-        const allProducts = await productCollection
-          .find()
-          .sort({ _id: -1 })
-          .toArray();
-        res.send(allProducts);
       }
+      const query = {};
+      if (available) {
+        query["$expr"] = {
+          $gte: [{ $subtract: ["$main_quantity", "$min_sell_quantity"] }, 100],
+        };
+      }
+      const allProducts = await productCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+      res.send(allProducts);
     });
     // end get  products by categories
     app.get("/categories/:category", verifyJWT, async (req, res) => {
