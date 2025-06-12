@@ -155,7 +155,7 @@ async function run() {
       const decodedEmail = req.tokenEmail;
       const email = req.params.email;
       const query = { orderedFrom: email };
-      console.log(email, decodedEmail);
+
       if (email !== decodedEmail) {
         return res.status(403).send({ message: "unauthorized access" });
       }
@@ -204,16 +204,15 @@ async function run() {
       const { quantity, buyerDetails } = orderData;
       const id = orderData.productId;
       const query = { _id: new ObjectId(id) };
-      console.log(id, quantity, buyerDetails);
 
       try {
         // find product
         const product = await productCollection.findOne(query);
-        // console.log("product", product);
+
         // create order
         orderData.date = new Date();
         const orderResult = await orderCollection.insertOne(orderData);
-        console.log("Order Result: ", orderResult);
+
         // Update productQuantity
         if (orderResult.acknowledged) {
           await productCollection.updateOne(query, {
@@ -229,8 +228,13 @@ async function run() {
         console.log(err);
       }
     });
-    // delete Order
-    app.delete("/orders/:id", async (req, res) => {
+    // end delete Order
+    app.delete("/orders/:id", verifyJWT, async (req, res) => {
+      const decodedEmail = req.tokenEmail;
+      const email = req.query.email;
+      if (email !== decodedEmail) {
+        return res.status(403).send({ message: "unauthorized access" });
+      }
       const id = req.params.id;
       const orderQuery = { _id: new ObjectId(id) };
       const orderDetails = await orderCollection.findOne(orderQuery);
@@ -239,7 +243,6 @@ async function run() {
       const quantity = orderDetails.quantity;
       const result = await orderCollection.deleteOne(orderQuery);
       if (result.deletedCount) {
-        console.log("deleted");
         await productCollection.updateOne(productQuery, {
           $inc: { main_quantity: quantity },
         });
@@ -247,10 +250,6 @@ async function run() {
       res.send(result);
     });
     // LAST ON TRY BLOCK Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
   } finally {
     // Ensures that the client will close when you finish/error
   }
