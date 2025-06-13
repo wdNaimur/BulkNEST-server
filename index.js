@@ -249,11 +249,11 @@ async function run() {
       const productQuery = { _id: new ObjectId(productId) };
       const quantity = orderDetails.quantity;
       const result = await orderCollection.deleteOne(orderQuery);
-      if (result.deletedCount) {
-        await productCollection.updateOne(productQuery, {
-          $inc: { main_quantity: quantity },
-        });
-      }
+      // if (result.deletedCount) {
+      //   await productCollection.updateOne(productQuery, {
+      //     $inc: { main_quantity: quantity },
+      //   });
+      // }
       res.send(result);
     });
     // LAST ON TRY BLOCK Send a ping to confirm a successful connection
