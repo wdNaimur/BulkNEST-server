@@ -204,37 +204,67 @@ async function run() {
     app.post("/orders/:email", verifyJWT, async (req, res) => {
       const decodedEmail = req.tokenEmail;
       const email = req.params.email;
+
       if (email !== decodedEmail) {
-        return res.status(403).send({ message: "unauthorized access" });
+        return res
+          .status(403)
+          .json({ success: false, message: "Unauthorized access" });
       }
+
       const orderData = req.body;
-      const { quantity, buyerDetails } = orderData;
-      const id = orderData.productId;
-      const query = { _id: new ObjectId(id) };
+      const { quantity, productId } = orderData;
+      const query = { _id: new ObjectId(productId) };
 
       try {
-        // find product
         const product = await productCollection.findOne(query);
+        if (!product) {
+          return res
+            .status(404)
+            .json({ success: false, message: "Product not found" });
+        }
 
-        // create order
+        if (quantity < product.min_sell_quantity) {
+          return res.status(400).json({
+            success: false,
+            message: `You need to buy at least ${product.min_sell_quantity} items.`,
+          });
+        }
+
+        if (product.main_quantity < quantity) {
+          return res.status(400).json({
+            success: false,
+            message: "Too late, this product is out of stock.",
+          });
+        }
+
+        // Set order date and create order
         orderData.date = new Date();
         const orderResult = await orderCollection.insertOne(orderData);
 
-        // Update productQuantity
         if (orderResult.acknowledged) {
           await productCollection.updateOne(query, {
             $inc: { main_quantity: -quantity },
           });
-          res.send({
+          return res.status(201).json({
             success: true,
             message: "Order placed successfully",
             orderId: orderResult.insertedId,
           });
+        } else {
+          return res.status(500).json({
+            success: false,
+            message: "Failed to place order. Please try again.",
+          });
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
+        return res.status(500).json({
+          success: false,
+          message: "Internal server error. Please try again later.",
+        });
       }
     });
+
     // end delete Order
     app.delete("/orders/:id", verifyJWT, async (req, res) => {
       const decodedEmail = req.tokenEmail;
