@@ -26,6 +26,6 @@ Backend server for BulkNest, a B2B wholesale marketplace designed to simplify an
 
 ## Live Demo
 
-[Check out BulkNEST live!](https://crewup.web.app/)
+[Check out BulkNEST live!](https://bulknest.web.app/)
 
 <p align="center"><sub><strong>Designed & Developed by Md. Naimur Rahman</strong></sub></p>
