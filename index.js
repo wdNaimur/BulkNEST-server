@@ -69,7 +69,7 @@ async function run() {
       const query = {};
       if (available) {
         query["$expr"] = {
-          $gte: [{ $subtract: ["$main_quantity", "$min_sell_quantity"] }, 100],
+          $gte: ["$min_sell_quantity", 100],
         };
       }
       const allProducts = await productCollection
