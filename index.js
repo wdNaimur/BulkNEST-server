@@ -276,6 +276,7 @@ async function run() {
     app.delete("/orders/:id", verifyJWT, async (req, res) => {
       const decodedEmail = req.tokenEmail;
       const email = req.query.email;
+      const type = req.query.type;
       if (email !== decodedEmail) {
         return res.status(403).send({ message: "unauthorized access" });
       }
@@ -286,15 +287,13 @@ async function run() {
       const productQuery = { _id: new ObjectId(productId) };
       const quantity = orderDetails.quantity;
       const result = await orderCollection.deleteOne(orderQuery);
-      // Updated Cart Condition main quantity increase condition
-      // just comment this if condition if main quantity should not increase.
-      // I have confirmed this condition with Md. Gias Uddin Hasan vaia.
-      if (result.deletedCount) {
+      // added both cancel and delete functionality
+      if (result.deletedCount && type === "cancel") {
         await productCollection.updateOne(productQuery, {
           $inc: { main_quantity: quantity },
         });
       }
-      // this if condition
+
       res.send(result);
     });
     // LAST ON TRY BLOCK Send a ping to confirm a successful connection
