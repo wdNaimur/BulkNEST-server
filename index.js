@@ -286,11 +286,15 @@ async function run() {
       const productQuery = { _id: new ObjectId(productId) };
       const quantity = orderDetails.quantity;
       const result = await orderCollection.deleteOne(orderQuery);
-      // if (result.deletedCount) {
-      //   await productCollection.updateOne(productQuery, {
-      //     $inc: { main_quantity: quantity },
-      //   });
-      // }
+      // Updated Cart Condition main quantity increase condition
+      // just comment this if condition if main quantity should not increase.
+      // I have confirmed this condition with Md. Gias Uddin Hasan vaia.
+      if (result.deletedCount) {
+        await productCollection.updateOne(productQuery, {
+          $inc: { main_quantity: quantity },
+        });
+      }
+      // this if condition
       res.send(result);
     });
     // LAST ON TRY BLOCK Send a ping to confirm a successful connection
