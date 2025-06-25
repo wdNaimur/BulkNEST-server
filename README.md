@@ -54,6 +54,34 @@ Backend server for **BulkNest**, a B2B wholesale marketplace designed to simplif
 
 `express`, `mongodb`, `firebase-admin`, `jsonwebtoken`, `cors`, `cookie-parser`, `dotenv`
 
+## 🛠️ BulkNest Server – Local Setup Instructions
+
+- **Clone the repository and install dependencies:**
+
+  ```bash
+  git clone https://github.com/wdNaimur/bulknest-server.git
+  cd bulknest-server
+  npm install
+  ```
+
+- **Create a `.env` file** in the project root and add the following environment variables:
+
+  ```
+  MONGODB_URI=your_mongodb_connection_string
+  JWT_SECRET_KEY=your_jwt_secret_key
+  FIREBASE_SERVICE_KEY=your_firebase_service_key_json_string_or_path
+  ```
+
+- **Run the development server:**
+
+  ```bash
+  npm run dev
+  ```
+
+- **Access the server locally at:**  
+  `http://localhost:3000`
+
+
 
 
 ## 🌐 Live Frontend & Client Repository
