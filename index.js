@@ -69,14 +69,7 @@ async function run() {
       const query = {};
       if (available) {
         query["$expr"] = {
-          $and: [
-            {
-              $gt: ["$min_sell_quantity", 100],
-            },
-            {
-              $gte: ["$main_quantity", "$min_sell_quantity"],
-            },
-          ],
+          $gte: ["$main_quantity", "$min_sell_quantity"],
         };
       }
       const allProducts = await productCollection
@@ -152,18 +145,69 @@ async function run() {
     app.patch("/product/:id", verifyJWT, async (req, res) => {
       const requestEmail = req.query.email;
       const emailFromToken = req.tokenEmail;
+
+      // Unauthorized if emails don't match
       if (emailFromToken !== requestEmail) {
         return res.status(403).send({ message: "Unauthorized" });
       }
+
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
+
+      // Step 1: Find the product
+      const existingProduct = await productCollection.findOne(query);
+
+      // Step 2: Check if the user is the creator
+      if (!existingProduct) {
+        return res.status(404).send({ message: "Product not found" });
+      }
+
+      if (existingProduct.userEmail !== emailFromToken) {
+        return res
+          .status(403)
+          .send({ message: "You are not the owner of this product" });
+      }
+
+      // Step 3: Proceed with update
       const updatedData = req.body;
       const updatedDoc = {
         $set: updatedData,
       };
+
       const result = await productCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
+    app.delete("/product/:id", verifyJWT, async (req, res) => {
+      const requestEmail = req.query.email;
+      const emailFromToken = req.tokenEmail;
+
+      // Check for unauthorized access
+      if (emailFromToken !== requestEmail) {
+        return res.status(403).send({ message: "Unauthorized" });
+      }
+
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+
+      // Find the product
+      const existingProduct = await productCollection.findOne(query);
+
+      if (!existingProduct) {
+        return res.status(404).send({ message: "Product not found" });
+      }
+
+      // Check if the logged-in user is the product creator
+      if (existingProduct.userEmail !== emailFromToken) {
+        return res
+          .status(403)
+          .send({ message: "You are not the owner of this product" });
+      }
+
+      // Proceed with deletion
+      const result = await productCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // end get order data by email my cart
     app.get("/orders/:email", verifyJWT, async (req, res) => {
       const decodedEmail = req.tokenEmail;
