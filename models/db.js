@@ -15,6 +15,7 @@ async function connectDB() {
   return {
     productCollection: db.collection("products"),
     orderCollection: db.collection("orders"),
+    userCollection: db.collection("users"),
   };
 }
 
