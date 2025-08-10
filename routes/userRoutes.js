@@ -4,5 +4,6 @@ const userController = require("../controllers/userController");
 const { verifyJWT } = require("../controllers/authMiddleware");
 
 router.post("/user", userController.createUser);
+router.get("/user/role/:email", userController.getUserRole);
 
 module.exports = router;

@@ -56,7 +56,7 @@ const getMyProducts = async (req, res) => {
   }
   try {
     const products = await productCollection
-      .find({ userEmail: requestEmail })
+      .find({ sellerEmail: requestEmail })
       .sort({ _id: -1 })
       .toArray();
     res.send(products);
@@ -98,7 +98,7 @@ const updateProduct = async (req, res) => {
     if (!existingProduct) {
       return res.status(404).send({ message: "Product not found" });
     }
-    if (existingProduct.userEmail !== emailFromToken) {
+    if (existingProduct.sellerEmail !== emailFromToken) {
       return res
         .status(403)
         .send({ message: "You are not the owner of this product" });
@@ -127,7 +127,7 @@ const deleteProduct = async (req, res) => {
     if (!existingProduct) {
       return res.status(404).send({ message: "Product not found" });
     }
-    if (existingProduct.userEmail !== emailFromToken) {
+    if (existingProduct.sellerEmail !== emailFromToken) {
       return res
         .status(403)
         .send({ message: "You are not the owner of this product" });

@@ -49,6 +49,47 @@ const getOrdersByEmail = async (req, res) => {
   }
 };
 
+const getSellerOrdersByEmail = async (req, res) => {
+  const decodedEmail = req.tokenEmail;
+  const email = req.params.email;
+
+  if (email !== decodedEmail) {
+    return res.status(403).send({ message: "unauthorized access" });
+  }
+
+  try {
+    const orders = await orderCollection
+      .find({ sellerEmail: email })
+      .sort({ _id: -1 })
+      .toArray();
+    if (!orders.length) {
+      return res
+        .status(404)
+        .send({ message: "No orders found for this email." });
+    }
+
+    const fullOrderDetails = await Promise.all(
+      orders.map(async (order) => {
+        const product = await productCollection.findOne({
+          _id: new ObjectId(order.productId),
+        });
+        if (product) {
+          order.productImage = product.image;
+          order.productBrand = product.brand;
+          order.productName = product.name;
+          order.totalPrice = order.quantity * product.price;
+        }
+        return order;
+      })
+    );
+
+    res.send(fullOrderDetails);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Error retrieving orders" });
+  }
+};
+
 const createOrder = async (req, res) => {
   const decodedEmail = req.tokenEmail;
   const email = req.params.email;
@@ -84,6 +125,7 @@ const createOrder = async (req, res) => {
       });
     }
     orderData.date = new Date();
+    orderData.sellerEmail = product.sellerEmail;
     const orderResult = await orderCollection.insertOne(orderData);
 
     if (orderResult.acknowledged) {
@@ -97,21 +139,17 @@ const createOrder = async (req, res) => {
         orderId: orderResult.insertedId,
       });
     } else {
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "Failed to place order. Please try again.",
-        });
+      return res.status(500).json({
+        success: false,
+        message: "Failed to place order. Please try again.",
+      });
     }
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error. Please try again later.",
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
   }
 };
 
@@ -153,6 +191,7 @@ const deleteOrder = async (req, res) => {
 module.exports = {
   setCollections,
   getOrdersByEmail,
+  getSellerOrdersByEmail,
   createOrder,
   deleteOrder,
 };
